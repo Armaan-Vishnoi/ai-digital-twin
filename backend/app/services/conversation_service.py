@@ -2,7 +2,6 @@ from uuid import UUID
 
 from app.models.conversation import Conversation
 from app.repositories.conversation_repository import ConversationRepository
-from app.schemas.conversation import ConversationCreate
 
 
 class ConversationService:
@@ -12,25 +11,31 @@ class ConversationService:
 
     def create(
         self,
-        data: ConversationCreate,
         user_id: UUID,
-    ):
+        title: str,
+    ) -> Conversation:
+
         conversation = Conversation(
-            title=data.title,
             user_id=user_id,
+            title=title,
         )
 
         return self.repository.create(conversation)
 
-    def get_all(self, user_id: UUID):
-        return self.repository.get_all(user_id)
+    def get_all(
+        self,
+        user_id: UUID,
+    ) -> list[Conversation]:
+
+        return self.repository.list_by_user(user_id)
 
     def get_one(
         self,
         conversation_id: UUID,
         user_id: UUID,
-    ):
-        conversation = self.repository.get_by_user(
+    ) -> Conversation:
+
+        conversation = self.repository.get_by_id(
             conversation_id,
             user_id,
         )
@@ -44,13 +49,12 @@ class ConversationService:
         self,
         conversation_id: UUID,
         user_id: UUID,
-    ):
-        conversation = self.repository.get_by_user(
+    ) -> None:
+
+        deleted = self.repository.delete(
             conversation_id,
             user_id,
         )
 
-        if conversation is None:
+        if not deleted:
             raise ValueError("Conversation not found.")
-
-        self.repository.delete(conversation)

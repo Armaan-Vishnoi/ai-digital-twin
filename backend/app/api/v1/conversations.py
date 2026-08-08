@@ -12,20 +12,36 @@ from app.schemas.conversation import (
 from app.services.conversation_service import ConversationService
 from app.services.dependencies import get_conversation_service
 
+
 router = APIRouter(
     prefix="/conversations",
     tags=["Conversations"],
 )
+
 
 CurrentUser = Annotated[
     User,
     Depends(get_current_user),
 ]
 
+
 ConversationServiceDep = Annotated[
     ConversationService,
     Depends(get_conversation_service),
 ]
+
+
+@router.get(
+    "",
+    response_model=list[ConversationResponse],
+)
+def list_conversations(
+    current_user: CurrentUser,
+    service: ConversationServiceDep,
+):
+    return service.get_all(
+        current_user.id,
+    )
 
 
 @router.post(
@@ -38,18 +54,10 @@ def create_conversation(
     current_user: CurrentUser,
     service: ConversationServiceDep,
 ):
-    return service.create(data, current_user.id)
-
-
-@router.get(
-    "",
-    response_model=list[ConversationResponse],
-)
-def list_conversations(
-    current_user: CurrentUser,
-    service: ConversationServiceDep,
-):
-    return service.get_all(current_user.id)
+    return service.create(
+        current_user.id,
+        data.title,
+    )
 
 
 @router.get(
@@ -69,7 +77,7 @@ def get_conversation(
 
     except ValueError as e:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
 
@@ -91,6 +99,6 @@ def delete_conversation(
 
     except ValueError as e:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
