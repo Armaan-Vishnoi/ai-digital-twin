@@ -43,20 +43,29 @@ class Settings(BaseSettings):
     OPENROUTER_API_KEY: str | None = None
 
     # ==========================
+    # Groq
+    # ==========================
+
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+
+    # ==========================
+    # LLM
+    # ==========================
+
+    LLM_PROVIDER: str = "groq"
+
+    # ==========================
     # JWT
     # ==========================
 
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    
-    LLM_PROVIDER: str = "groq"
-
-    GROQ_API_KEY: str | None = None
 
 
 @lru_cache
-def get_settings():
+def get_settings() -> Settings:
     return Settings()
 
 

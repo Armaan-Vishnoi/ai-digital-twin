@@ -7,11 +7,19 @@ from app.llm.base import BaseLLM
 
 
 class GroqLLM(BaseLLM):
+    """Groq implementation of the BaseLLM interface."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        if not settings.GROQ_API_KEY:
+            raise ValueError(
+                "GROQ_API_KEY is not configured."
+            )
+
         self.client = Groq(
-            api_key=settings.GROQ_API_KEY
+            api_key=settings.GROQ_API_KEY,
         )
+
+        self.model = settings.GROQ_MODEL
 
     def generate(
         self,
@@ -19,34 +27,31 @@ class GroqLLM(BaseLLM):
         history: list[dict] | None = None,
         memories: list[dict] | None = None,
     ) -> str:
+        """Generate an assistant response."""
 
-        messages = [
+        messages: list[dict] = [
             {
                 "role": "system",
                 "content": (
                     "You are an AI assistant for an AI Digital Twin.\n\n"
-
                     "Use the provided conversation history and long-term "
                     "memories to answer the user.\n\n"
-
                     "Long-term memories represent information explicitly "
                     "provided by the user in previous conversations.\n\n"
-
-                    "Do not invent, guess, or exaggerate personal facts.\n"
-
-                    "If a personal fact is present in the long-term memories, "
-                    "you may use it even if it was mentioned in another conversation.\n\n"
-
-                    "If the information is not present in either the conversation "
+                    "Do not invent, guess, or exaggerate personal facts.\n\n"
+                    "If a personal fact is present in the long-term "
+                    "memories, you may use it even if it was mentioned "
+                    "in another conversation.\n\n"
+                    "If the information is not present in the conversation "
                     "history, long-term memories, or current user message, "
                     "say that you do not know.\n\n"
-
-                    "When answering questions about the user's personal information, "
-                    "prefer the most recent relevant memory."
+                    "When answering questions about the user's personal "
+                    "information, prefer the most recent relevant memory."
                 ),
             }
         ]
 
+        # Add conversation history.
         if history:
             for message in history:
                 role = message.get("role")
@@ -60,6 +65,7 @@ class GroqLLM(BaseLLM):
                         }
                     )
 
+        # Add current user message.
         messages.append(
             {
                 "role": "user",
@@ -67,9 +73,7 @@ class GroqLLM(BaseLLM):
             }
         )
 
-        # Add long-term memories
-        memory_text = ""
-
+        # Add long-term memories.
         if memories:
             memory_text = "\n".join(
                 f"- {memory['key']}: {memory['value']}"
@@ -77,28 +81,36 @@ class GroqLLM(BaseLLM):
                 if memory.get("key") and memory.get("value")
             )
 
-        if memory_text:
-            messages.append(
-                {
-                    "role": "system",
-                    "content": (
-                        "Long-term memories about the user:\n"
-                        f"{memory_text}"
-                    ),
-                }
-            )
+            if memory_text:
+                messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "Long-term memories about the user:\n"
+                            f"{memory_text}"
+                        ),
+                    }
+                )
 
         response = self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=self.model,
             messages=messages,
         )
 
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+
+        if not content:
+            raise ValueError(
+                "LLM returned an empty response."
+            )
+
+        return content.strip()
 
     def extract_memory(
         self,
         user_message: str,
     ) -> dict | None:
+        """Extract explicit long-term personal information."""
 
         system_prompt = """
 You are a memory extraction system for an AI Digital Twin.
@@ -188,7 +200,7 @@ If there is a memory, return exactly:
 """
 
         response = self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=self.model,
             messages=[
                 {
                     "role": "system",
@@ -209,10 +221,17 @@ If there is a memory, return exactly:
 
         raw = raw.strip()
 
-        # Remove markdown code fences if the model returns them.
+        # Handle markdown code fences.
         if raw.startswith("```"):
-            raw = raw.replace("```json", "", 1)
-            raw = raw.replace("```", "", 1)
+            if raw.startswith("```json"):
+                raw = raw[7:]
+
+            elif raw.startswith("```"):
+                raw = raw[3:]
+
+            if raw.endswith("```"):
+                raw = raw[:-3]
+
             raw = raw.strip()
 
         try:
@@ -232,7 +251,10 @@ If there is a memory, return exactly:
             "value",
         )
 
-        if not all(field in result for field in required_fields):
+        if not all(
+            field in result
+            for field in required_fields
+        ):
             return None
 
         if not all(
