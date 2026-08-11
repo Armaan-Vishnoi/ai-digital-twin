@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 
 class BaseLLM(ABC):
-
     @abstractmethod
     def generate(
         self,
@@ -14,7 +13,6 @@ class BaseLLM(ABC):
         Generate an assistant response using conversation
         history and long-term memories.
         """
-        pass
 
     @abstractmethod
     def extract_memory(
@@ -33,4 +31,3 @@ class BaseLLM(ABC):
 
         or None when there is nothing worth remembering.
         """
-        pass

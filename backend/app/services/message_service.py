@@ -8,7 +8,6 @@ from app.services.memory_service import MemoryService
 
 
 class MessageService:
-
     def __init__(
         self,
         repository: MessageRepository,
@@ -26,7 +25,6 @@ class MessageService:
         conversation_id: UUID,
         current_user,
         content: str,
-        
     ):
 
         # -------------------------------------------------
@@ -34,7 +32,8 @@ class MessageService:
         # -------------------------------------------------
 
         conversation = self.conversation_repository.get_by_id(
-            conversation_id
+            conversation_id,
+            current_user.id,
         )
 
         if conversation is None:
@@ -51,9 +50,7 @@ class MessageService:
         # 3. Get previous conversation history
         # -------------------------------------------------
 
-        previous_messages = self.repository.list_by_conversation(
-            conversation_id
-        )
+        previous_messages = self.repository.list_by_conversation(conversation_id)
 
         history = [
             {
@@ -74,38 +71,28 @@ class MessageService:
             content=content,
         )
 
-        user_message = self.repository.create(
-            user_message
-        )
+        user_message = self.repository.create(user_message)
 
         # -------------------------------------------------
         # 5. Extract memory
         # -------------------------------------------------
 
         try:
-            extracted_memory = self.llm.extract_memory(
-                content
-            )
+            extracted_memory = self.llm.extract_memory(content)
+        except Exception:  # noqa: BLE001            # Memory extraction is best-effort and must not break chat.
+            extracted_memory = None
 
-            if extracted_memory is not None:
-                self.memory_service.save_extracted_memory(
-                    user_id=current_user.id,
-                    memory=extracted_memory,
-                )
-
-        except Exception as e:
-            # Memory extraction must NOT break normal chat.
-            print(
-                f"Memory extraction failed: {e}"
+        if extracted_memory is not None:
+            self.memory_service.save_extracted_memory(
+                user_id=current_user.id,
+                memory=extracted_memory,
             )
 
         # -------------------------------------------------
-# 6. Get long-term memories
-# -------------------------------------------------
+        # 6. Get long-term memories
+        # -------------------------------------------------
 
-        user_memories = self.memory_service.list(
-            current_user.id
-        )
+        user_memories = self.memory_service.list(current_user.id)
 
         memory_context = [
             {
@@ -116,9 +103,9 @@ class MessageService:
             for memory in user_memories
         ]
 
-# -------------------------------------------------
-# 7. Generate AI response
-# -------------------------------------------------
+        # -------------------------------------------------
+        # 7. Generate AI response
+        # -------------------------------------------------
 
         ai_text = self.llm.generate(
             content,
@@ -136,9 +123,7 @@ class MessageService:
             content=ai_text,
         )
 
-        assistant_message = self.repository.create(
-            assistant_message
-        )
+        assistant_message = self.repository.create(assistant_message)
 
         return {
             "user_message": user_message,
@@ -152,18 +137,16 @@ class MessageService:
     ):
 
         conversation = self.conversation_repository.get_by_id(
-            conversation_id
+            conversation_id,
+            current_user.id,
         )
-
         if conversation is None:
             raise ValueError("Conversation not found")
 
         if conversation.user_id != current_user.id:
             raise ValueError("Conversation not found")
 
-        return self.repository.list_by_conversation(
-            conversation_id
-        )
+        return self.repository.list_by_conversation(conversation_id)
 
     def delete(
         self,
@@ -171,15 +154,14 @@ class MessageService:
         current_user,
     ):
 
-        message = self.repository.get_by_id(
-            message_id
-        )
+        message = self.repository.get_by_id(message_id)
 
         if message is None:
             raise ValueError("Message not found")
 
         conversation = self.conversation_repository.get_by_id(
-            message.conversation_id
+            message.conversation_id,
+            current_user.id,
         )
 
         if conversation is None:
@@ -188,6 +170,4 @@ class MessageService:
         if conversation.user_id != current_user.id:
             raise ValueError("Message not found")
 
-        self.repository.delete(
-            message_id
-        )
+        self.repository.delete(message_id)

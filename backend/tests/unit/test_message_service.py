@@ -1,18 +1,19 @@
-import pytest
 from uuid import uuid4
-from app.models.user import User
+
+import pytest
+
+import app.models.user  # noqa: F401
 from app.models.conversation import Conversation
 from app.models.memory import Memory
 from app.models.message import Message
 from app.services.message_service import MessageService
 
-
 # ============================================================
 # Fake Message Repository
 # ============================================================
 
-class FakeMessageRepository:
 
+class FakeMessageRepository:
     def __init__(self):
         self.messages = []
 
@@ -40,9 +41,7 @@ class FakeMessageRepository:
 
     def delete(self, message_id):
         self.messages = [
-            message
-            for message in self.messages
-            if message.id != message_id
+            message for message in self.messages if message.id != message_id
         ]
 
 
@@ -50,17 +49,17 @@ class FakeMessageRepository:
 # Fake Conversation Repository
 # ============================================================
 
-class FakeConversationRepository:
 
+class FakeConversationRepository:
     def __init__(self):
         self.conversations = []
 
     def add(self, conversation):
         self.conversations.append(conversation)
 
-    def get_by_id(self, conversation_id):
+    def get_by_id(self, conversation_id, user_id):
         for conversation in self.conversations:
-            if conversation.id == conversation_id:
+            if conversation.id == conversation_id and conversation.user_id == user_id:
                 return conversation
 
         return None
@@ -70,8 +69,8 @@ class FakeConversationRepository:
 # Fake Memory Service
 # ============================================================
 
-class FakeMemoryService:
 
+class FakeMemoryService:
     def __init__(self):
         self.memories = []
         self.saved_memories = []
@@ -91,19 +90,15 @@ class FakeMemoryService:
         return memory
 
     def list(self, user_id):
-        return [
-            memory
-            for memory in self.memories
-            if memory.user_id == user_id
-        ]
+        return [memory for memory in self.memories if memory.user_id == user_id]
 
 
 # ============================================================
 # Fake LLM
 # ============================================================
 
-class FakeLLM:
 
+class FakeLLM:
     def __init__(
         self,
         extracted_memory=None,
@@ -141,8 +136,8 @@ class FakeLLM:
 # Fake User
 # ============================================================
 
-class FakeUser:
 
+class FakeUser:
     def __init__(self, user_id):
         self.id = user_id
 
@@ -151,8 +146,10 @@ class FakeUser:
 # Test Helpers
 # ============================================================
 
+
 def create_conversation(user_id):
     conversation = Conversation(
+        id=uuid4(),
         user_id=user_id,
         title="Test Conversation",
     )
@@ -201,8 +198,8 @@ def create_service(
 # 1. Create Message + Generate Assistant Response
 # ============================================================
 
-def test_create_message_generates_assistant_response():
 
+def test_create_message_generates_assistant_response():
     user_id = uuid4()
 
     (
@@ -229,10 +226,7 @@ def test_create_message_generates_assistant_response():
 
     assert result["assistant_message"].role == "assistant"
 
-    assert (
-        result["assistant_message"].content
-        == "Hello from the fake AI."
-    )
+    assert result["assistant_message"].content == "Hello from the fake AI."
 
     assert len(message_repository.messages) == 2
 
@@ -245,8 +239,8 @@ def test_create_message_generates_assistant_response():
 # 2. Memory Extraction + Saving
 # ============================================================
 
-def test_create_extracts_and_saves_memory():
 
+def test_create_extracts_and_saves_memory():
     user_id = uuid4()
 
     extracted_memory = {
@@ -275,10 +269,7 @@ def test_create_extracts_and_saves_memory():
 
     assert len(llm.extract_memory_calls) == 1
 
-    assert (
-        llm.extract_memory_calls[0]
-        == "My favorite programming language is Python."
-    )
+    assert llm.extract_memory_calls[0] == "My favorite programming language is Python."
 
     assert len(memory_service.saved_memories) == 1
 
@@ -293,8 +284,8 @@ def test_create_extracts_and_saves_memory():
 # 3. No Memory When Extraction Returns None
 # ============================================================
 
-def test_no_memory_is_saved_when_extraction_returns_none():
 
+def test_no_memory_is_saved_when_extraction_returns_none():
     user_id = uuid4()
 
     (
@@ -324,8 +315,8 @@ def test_no_memory_is_saved_when_extraction_returns_none():
 # 4. Long-Term Memories Are Sent To LLM
 # ============================================================
 
-def test_long_term_memories_are_sent_to_llm():
 
+def test_long_term_memories_are_sent_to_llm():
     user_id = uuid4()
 
     (
@@ -370,10 +361,7 @@ def test_long_term_memories_are_sent_to_llm():
 
     assert memories[0]["memory_type"] == "preference"
 
-    assert (
-        memories[0]["key"]
-        == "favorite_programming_language"
-    )
+    assert memories[0]["key"] == "favorite_programming_language"
 
     assert memories[0]["value"] == "Python"
 
@@ -382,8 +370,8 @@ def test_long_term_memories_are_sent_to_llm():
 # 5. Previous Messages Are Sent As History
 # ============================================================
 
-def test_previous_messages_are_sent_as_history():
 
+def test_previous_messages_are_sent_as_history():
     user_id = uuid4()
 
     (
@@ -409,13 +397,9 @@ def test_previous_messages_are_sent_as_history():
         content="Nice to meet you, Prem.",
     )
 
-    message_repository.create(
-        previous_user_message
-    )
+    message_repository.create(previous_user_message)
 
-    message_repository.create(
-        previous_assistant_message
-    )
+    message_repository.create(previous_assistant_message)
 
     service.create(
         conversation_id=conversation.id,
@@ -442,8 +426,8 @@ def test_previous_messages_are_sent_as_history():
 # 6. User Cannot Access Another User's Conversation
 # ============================================================
 
-def test_user_cannot_send_message_to_another_users_conversation():
 
+def test_user_cannot_send_message_to_another_users_conversation():
     owner_id = uuid4()
 
     attacker_id = uuid4()
@@ -460,7 +444,6 @@ def test_user_cannot_send_message_to_another_users_conversation():
     )
 
     with pytest.raises(ValueError) as exc:
-
         service.create(
             conversation_id=conversation.id,
             current_user=FakeUser(attacker_id),
@@ -480,8 +463,8 @@ def test_user_cannot_send_message_to_another_users_conversation():
 # 7. Nonexistent Conversation Fails
 # ============================================================
 
-def test_message_to_nonexistent_conversation_fails():
 
+def test_message_to_nonexistent_conversation_fails():
     user_id = uuid4()
 
     (
@@ -496,7 +479,6 @@ def test_message_to_nonexistent_conversation_fails():
     )
 
     with pytest.raises(ValueError) as exc:
-
         service.create(
             conversation_id=uuid4(),
             current_user=FakeUser(user_id),
@@ -516,8 +498,8 @@ def test_message_to_nonexistent_conversation_fails():
 # 8. Memory Extraction Failure Does Not Break Chat
 # ============================================================
 
-def test_memory_extraction_failure_does_not_break_chat():
 
+def test_memory_extraction_failure_does_not_break_chat():
     user_id = uuid4()
 
     message_repository = FakeMessageRepository()
@@ -531,11 +513,8 @@ def test_memory_extraction_failure_does_not_break_chat():
     conversation_repository.add(conversation)
 
     class FailingMemoryLLM:
-
         def extract_memory(self, user_message):
-            raise RuntimeError(
-                "LLM memory extraction failed"
-            )
+            raise RuntimeError("LLM memory extraction failed")
 
         def generate(
             self,
@@ -562,9 +541,6 @@ def test_memory_extraction_failure_does_not_break_chat():
 
     assert result["user_message"].content == "Hello"
 
-    assert (
-        result["assistant_message"].content
-        == "Chat still works."
-    )
+    assert result["assistant_message"].content == "Chat still works."
 
     assert len(message_repository.messages) == 2

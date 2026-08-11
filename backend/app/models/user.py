@@ -1,9 +1,9 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 

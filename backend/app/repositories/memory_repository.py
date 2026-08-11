@@ -7,7 +7,6 @@ from app.models.memory import Memory
 
 
 class MemoryRepository:
-
     def __init__(self, db: Session):
         self.db = db
 
@@ -29,9 +28,7 @@ class MemoryRepository:
             .order_by(Memory.created_at.asc())
         )
 
-        return list(
-            self.db.scalars(statement).all()
-        )
+        return list(self.db.scalars(statement).all())
 
     def get_by_key(
         self,
@@ -39,12 +36,9 @@ class MemoryRepository:
         key: str,
     ) -> Memory | None:
 
-        statement = (
-            select(Memory)
-            .where(
-                Memory.user_id == user_id,
-                Memory.key == key,
-            )
+        statement = select(Memory).where(
+            Memory.user_id == user_id,
+            Memory.key == key,
         )
 
         return self.db.scalar(statement)
@@ -55,12 +49,9 @@ class MemoryRepository:
         user_id: UUID,
     ) -> Memory | None:
 
-        statement = (
-            select(Memory)
-            .where(
-                Memory.id == memory_id,
-                Memory.user_id == user_id,
-            )
+        statement = select(Memory).where(
+            Memory.id == memory_id,
+            Memory.user_id == user_id,
         )
 
         return self.db.scalar(statement)

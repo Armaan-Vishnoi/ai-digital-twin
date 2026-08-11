@@ -8,9 +8,7 @@ from app.core.config import settings
 def create_access_token(data: dict) -> str:
     payload = data.copy()
 
-    expire = datetime.now(UTC) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     payload.update(
         {
@@ -29,9 +27,7 @@ def create_access_token(data: dict) -> str:
 def create_refresh_token(data: dict) -> str:
     payload = data.copy()
 
-    expire = datetime.now(UTC) + timedelta(
-        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
-    )
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
     payload.update(
         {

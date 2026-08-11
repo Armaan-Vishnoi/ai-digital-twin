@@ -5,7 +5,6 @@ from app.repositories.memory_repository import MemoryRepository
 
 
 class MemoryService:
-
     def __init__(
         self,
         repository: MemoryRepository,

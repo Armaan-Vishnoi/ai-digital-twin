@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
@@ -7,11 +8,9 @@ from app.api.deps import DBSession
 from app.auth.jwt import verify_token
 from app.repositories.user_repository import UserRepository
 
-
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/auth/login"
+    tokenUrl="/api/v1/auth/login",
 )
-
 
 TokenDep = Annotated[
     str,
@@ -28,17 +27,13 @@ def get_current_payload(
     This dependency is useful when an endpoint only needs
     the decoded token payload.
     """
-
     try:
-        payload = verify_token(token)
-
-    except Exception:
+        return verify_token(token)
+    except jwt.PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
-
-    return payload
+        ) from exc
 
 
 def get_current_user(
@@ -50,15 +45,13 @@ def get_current_user(
 
     Refresh tokens must never be accepted here.
     """
-
     try:
         payload = verify_token(token)
-
-    except Exception:
+    except jwt.PyJWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
-        )
+        ) from exc
 
     # -------------------------------------------------
     # ACCESS TOKEN CHECK
@@ -86,9 +79,7 @@ def get_current_user(
     # GET USER
     # -------------------------------------------------
 
-    user = UserRepository(db).get_by_id(
-        user_id
-    )
+    user = UserRepository(db).get_by_id(user_id)
 
     if user is None:
         raise HTTPException(

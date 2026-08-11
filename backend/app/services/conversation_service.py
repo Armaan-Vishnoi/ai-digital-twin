@@ -5,8 +5,10 @@ from app.repositories.conversation_repository import ConversationRepository
 
 
 class ConversationService:
-
-    def __init__(self, repository: ConversationRepository):
+    def __init__(
+        self,
+        repository: ConversationRepository,
+    ):
         self.repository = repository
 
     def create(
@@ -14,7 +16,6 @@ class ConversationService:
         user_id: UUID,
         title: str,
     ) -> Conversation:
-
         conversation = Conversation(
             user_id=user_id,
             title=title,
@@ -26,7 +27,6 @@ class ConversationService:
         self,
         user_id: UUID,
     ) -> list[Conversation]:
-
         return self.repository.list_by_user(user_id)
 
     def get_one(
@@ -34,7 +34,6 @@ class ConversationService:
         conversation_id: UUID,
         user_id: UUID,
     ) -> Conversation:
-
         conversation = self.repository.get_by_id(
             conversation_id,
             user_id,
@@ -50,7 +49,6 @@ class ConversationService:
         conversation_id: UUID,
         user_id: UUID,
     ) -> None:
-
         deleted = self.repository.delete(
             conversation_id,
             user_id,

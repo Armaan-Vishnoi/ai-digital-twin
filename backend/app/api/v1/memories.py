@@ -9,7 +9,6 @@ from app.schemas.memory import MemoryCreate, MemoryResponse
 from app.services.dependencies import get_memory_service
 from app.services.memory_service import MemoryService
 
-
 router = APIRouter(
     prefix="/memories",
     tags=["Memories"],

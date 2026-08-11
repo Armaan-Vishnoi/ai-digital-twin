@@ -1,9 +1,20 @@
 import json
 
 from groq import Groq
+from groq.types.chat import (
+    ChatCompletionAssistantMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+)
 
 from app.core.config import settings
 from app.llm.base import BaseLLM
+
+type ChatMessage = (
+    ChatCompletionSystemMessageParam
+    | ChatCompletionUserMessageParam
+    | ChatCompletionAssistantMessageParam
+)
 
 
 class GroqLLM(BaseLLM):
@@ -11,9 +22,7 @@ class GroqLLM(BaseLLM):
 
     def __init__(self) -> None:
         if not settings.GROQ_API_KEY:
-            raise ValueError(
-                "GROQ_API_KEY is not configured."
-            )
+            raise ValueError("GROQ_API_KEY is not configured.")
 
         self.client = Groq(
             api_key=settings.GROQ_API_KEY,
@@ -29,7 +38,7 @@ class GroqLLM(BaseLLM):
     ) -> str:
         """Generate an assistant response."""
 
-        messages: list[dict] = [
+        messages: list[ChatMessage] = [
             {
                 "role": "system",
                 "content": (
@@ -57,10 +66,17 @@ class GroqLLM(BaseLLM):
                 role = message.get("role")
                 content = message.get("content")
 
-                if role in ("user", "assistant") and content:
+                if role == "user" and content:
                     messages.append(
                         {
-                            "role": role,
+                            "role": "user",
+                            "content": content,
+                        }
+                    )
+                elif role == "assistant" and content:
+                    messages.append(
+                        {
+                            "role": "assistant",
                             "content": content,
                         }
                     )
@@ -86,8 +102,7 @@ class GroqLLM(BaseLLM):
                     {
                         "role": "system",
                         "content": (
-                            "Long-term memories about the user:\n"
-                            f"{memory_text}"
+                            f"Long-term memories about the user:\n{memory_text}"
                         ),
                     }
                 )
@@ -100,9 +115,7 @@ class GroqLLM(BaseLLM):
         content = response.choices[0].message.content
 
         if not content:
-            raise ValueError(
-                "LLM returned an empty response."
-            )
+            raise ValueError("LLM returned an empty response.")
 
         return content.strip()
 
@@ -225,13 +238,10 @@ If there is a memory, return exactly:
         if raw.startswith("```"):
             if raw.startswith("```json"):
                 raw = raw[7:]
-
-            elif raw.startswith("```"):
+            else:
                 raw = raw[3:]
 
-            if raw.endswith("```"):
-                raw = raw[:-3]
-
+            raw = raw.removesuffix("```")
             raw = raw.strip()
 
         try:
@@ -251,15 +261,11 @@ If there is a memory, return exactly:
             "value",
         )
 
-        if not all(
-            field in result
-            for field in required_fields
-        ):
+        if not all(field in result for field in required_fields):
             return None
 
         if not all(
-            isinstance(result[field], str)
-            and result[field].strip()
+            isinstance(result[field], str) and result[field].strip()
             for field in required_fields
         ):
             return None

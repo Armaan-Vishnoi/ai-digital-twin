@@ -3,12 +3,10 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
 from app.core.config import settings
-from app.database.base import Base
 
 # Import all models so Alembic can detect them
-from app.database import models
+from app.database.base import Base
 
 config = context.config
 

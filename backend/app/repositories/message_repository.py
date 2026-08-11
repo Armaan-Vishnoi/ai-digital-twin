@@ -7,7 +7,6 @@ from app.models.message import Message
 
 
 class MessageRepository:
-
     def __init__(self, db: Session):
         self.db = db
 
@@ -34,9 +33,7 @@ class MessageRepository:
         self,
         message_id: UUID,
     ) -> Message | None:
-        statement = select(Message).where(
-            Message.id == message_id
-        )
+        statement = select(Message).where(Message.id == message_id)
 
         return self.db.scalar(statement)
 

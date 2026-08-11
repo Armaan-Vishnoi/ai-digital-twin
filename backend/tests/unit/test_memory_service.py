@@ -4,16 +4,12 @@ from app.services.memory_service import MemoryService
 
 
 class FakeMemoryRepository:
-
     def __init__(self):
         self.memories = []
 
     def get_by_key(self, user_id, key):
         for memory in self.memories:
-            if (
-                memory.user_id == user_id
-                and memory.key == key
-            ):
+            if memory.user_id == user_id and memory.key == key:
                 return memory
 
         return None
@@ -26,18 +22,11 @@ class FakeMemoryRepository:
         return memory
 
     def list_by_user(self, user_id):
-        return [
-            memory
-            for memory in self.memories
-            if memory.user_id == user_id
-        ]
+        return [memory for memory in self.memories if memory.user_id == user_id]
 
     def get_by_id(self, memory_id, user_id):
         for memory in self.memories:
-            if (
-                memory.id == memory_id
-                and memory.user_id == user_id
-            ):
+            if memory.id == memory_id and memory.user_id == user_id:
                 return memory
 
         return None

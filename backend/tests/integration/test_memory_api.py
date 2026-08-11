@@ -37,9 +37,7 @@ def user(db: Session) -> User:
 
     yield test_user
 
-    db.query(Memory).filter(
-        Memory.user_id == test_user.id
-    ).delete()
+    db.query(Memory).filter(Memory.user_id == test_user.id).delete()
 
     db.delete(test_user)
     db.commit()
@@ -61,9 +59,7 @@ def other_user(db: Session) -> User:
 
     yield test_user
 
-    db.query(Memory).filter(
-        Memory.user_id == test_user.id
-    ).delete()
+    db.query(Memory).filter(Memory.user_id == test_user.id).delete()
 
     db.delete(test_user)
     db.commit()
@@ -78,9 +74,7 @@ def client(db: Session, user: User):
         return user
 
     app.dependency_overrides[get_db] = override_get_db
-    app.dependency_overrides[get_current_user] = (
-        override_get_current_user
-    )
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
     with TestClient(app) as test_client:
         yield test_client
@@ -153,9 +147,7 @@ def test_get_memory(
     db.commit()
     db.refresh(memory)
 
-    response = client.get(
-        f"/api/v1/memories/{memory.id}"
-    )
+    response = client.get(f"/api/v1/memories/{memory.id}")
 
     assert response.status_code == 200
 
@@ -170,9 +162,7 @@ def test_get_nonexistent_memory(
 ):
     memory_id = uuid4()
 
-    response = client.get(
-        f"/api/v1/memories/{memory_id}"
-    )
+    response = client.get(f"/api/v1/memories/{memory_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Memory not found"
@@ -194,9 +184,7 @@ def test_user_cannot_access_another_users_memory(
     db.commit()
     db.refresh(memory)
 
-    response = client.get(
-        f"/api/v1/memories/{memory.id}"
-    )
+    response = client.get(f"/api/v1/memories/{memory.id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Memory not found"
@@ -220,9 +208,7 @@ def test_delete_memory(
 
     memory_id = memory.id
 
-    response = client.delete(
-        f"/api/v1/memories/{memory_id}"
-    )
+    response = client.delete(f"/api/v1/memories/{memory_id}")
 
     assert response.status_code == 204
 
@@ -236,9 +222,7 @@ def test_delete_nonexistent_memory(
 ):
     memory_id = uuid4()
 
-    response = client.delete(
-        f"/api/v1/memories/{memory_id}"
-    )
+    response = client.delete(f"/api/v1/memories/{memory_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Memory not found"

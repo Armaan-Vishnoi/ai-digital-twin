@@ -50,9 +50,7 @@ def user(db: Session) -> User:
     yield test_user
 
     # Clean up memories first.
-    db.query(Memory).filter(
-        Memory.user_id == test_user.id
-    ).delete()
+    db.query(Memory).filter(Memory.user_id == test_user.id).delete()
 
     db.delete(test_user)
     db.commit()

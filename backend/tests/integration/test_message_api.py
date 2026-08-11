@@ -41,15 +41,11 @@ def user(db: Session) -> User:
 
     db.query(Message).filter(
         Message.conversation_id.in_(
-            db.query(Conversation.id).filter(
-                Conversation.user_id == test_user.id
-            )
+            db.query(Conversation.id).filter(Conversation.user_id == test_user.id)
         )
     ).delete(synchronize_session=False)
 
-    db.query(Conversation).filter(
-        Conversation.user_id == test_user.id
-    ).delete()
+    db.query(Conversation).filter(Conversation.user_id == test_user.id).delete()
 
     db.delete(test_user)
     db.commit()
@@ -73,15 +69,11 @@ def other_user(db: Session) -> User:
 
     db.query(Message).filter(
         Message.conversation_id.in_(
-            db.query(Conversation.id).filter(
-                Conversation.user_id == test_user.id
-            )
+            db.query(Conversation.id).filter(Conversation.user_id == test_user.id)
         )
     ).delete(synchronize_session=False)
 
-    db.query(Conversation).filter(
-        Conversation.user_id == test_user.id
-    ).delete()
+    db.query(Conversation).filter(Conversation.user_id == test_user.id).delete()
 
     db.delete(test_user)
     db.commit()
@@ -170,9 +162,7 @@ class FakeMessageService:
 
         return list(
             self.db.query(Message)
-            .filter(
-                Message.conversation_id == conversation_id
-            )
+            .filter(Message.conversation_id == conversation_id)
             .order_by(Message.created_at.asc())
             .all()
         )
@@ -221,13 +211,9 @@ def client(
 
     app.dependency_overrides[get_db] = override_get_db
 
-    app.dependency_overrides[get_current_user] = (
-        override_get_current_user
-    )
+    app.dependency_overrides[get_current_user] = override_get_current_user
 
-    app.dependency_overrides[get_message_service] = (
-        override_get_message_service
-    )
+    app.dependency_overrides[get_message_service] = override_get_message_service
 
     with TestClient(app) as test_client:
         yield test_client
@@ -257,10 +243,7 @@ def test_create_message(
     assert data["user_message"]["content"] == "Hello AI"
 
     assert data["assistant_message"]["role"] == "assistant"
-    assert (
-        data["assistant_message"]["content"]
-        == "Fake assistant response"
-    )
+    assert data["assistant_message"]["content"] == "Fake assistant response"
 
 
 def test_list_messages(
@@ -284,9 +267,7 @@ def test_list_messages(
     db.add(second)
     db.commit()
 
-    response = client.get(
-        f"/api/v1/messages/{conversation.id}"
-    )
+    response = client.get(f"/api/v1/messages/{conversation.id}")
 
     assert response.status_code == 200
 
@@ -329,9 +310,7 @@ def test_user_cannot_access_another_users_conversation(
     db.commit()
     db.refresh(conversation)
 
-    response = client.get(
-        f"/api/v1/messages/{conversation.id}"
-    )
+    response = client.get(f"/api/v1/messages/{conversation.id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Conversation not found"
@@ -379,9 +358,7 @@ def test_delete_message(
 
     message_id = message.id
 
-    response = client.delete(
-        f"/api/v1/messages/{message_id}"
-    )
+    response = client.delete(f"/api/v1/messages/{message_id}")
 
     assert response.status_code == 204
 
@@ -398,9 +375,7 @@ def test_delete_nonexistent_message(
 ):
     message_id = uuid4()
 
-    response = client.delete(
-        f"/api/v1/messages/{message_id}"
-    )
+    response = client.delete(f"/api/v1/messages/{message_id}")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Message not found"

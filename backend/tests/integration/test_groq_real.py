@@ -3,7 +3,6 @@ import pytest
 from app.core.config import settings
 from app.llm.groq import GroqLLM
 
-
 pytestmark = pytest.mark.integration
 
 
@@ -14,9 +13,7 @@ pytestmark = pytest.mark.integration
 def test_real_groq_generate():
     llm = GroqLLM()
 
-    response = llm.generate(
-        "Reply with exactly: REAL GROQ TEST PASSED"
-    )
+    response = llm.generate("Reply with exactly: REAL GROQ TEST PASSED")
 
     assert response
     assert isinstance(response, str)
@@ -30,9 +27,7 @@ def test_real_groq_generate():
 def test_real_groq_memory_extraction():
     llm = GroqLLM()
 
-    memory = llm.extract_memory(
-        "My favorite programming language is Python."
-    )
+    memory = llm.extract_memory("My favorite programming language is Python.")
 
     assert memory is not None
 

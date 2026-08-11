@@ -4,7 +4,6 @@ import pytest
 
 from app.llm.groq import GroqLLM
 
-
 # ============================================================
 # Fake Groq client
 # ============================================================
@@ -50,9 +49,7 @@ def fake_response(content):
 def create_llm(response):
     llm = GroqLLM.__new__(GroqLLM)
 
-    llm.client = FakeGroqClient(
-        fake_response(response)
-    )
+    llm.client = FakeGroqClient(fake_response(response))
 
     llm.model = "test-model"
 
@@ -65,9 +62,7 @@ def create_llm(response):
 
 
 def test_generate_returns_assistant_response():
-    llm = create_llm(
-        "Hello! How can I help you?"
-    )
+    llm = create_llm("Hello! How can I help you?")
 
     result = llm.generate(
         "Hello",
@@ -75,12 +70,7 @@ def test_generate_returns_assistant_response():
 
     assert result == "Hello! How can I help you?"
 
-    request = (
-        llm.client
-        .chat
-        .completions
-        .last_kwargs
-    )
+    request = llm.client.chat.completions.last_kwargs
 
     assert request["model"] == "test-model"
 
@@ -91,9 +81,7 @@ def test_generate_returns_assistant_response():
 
 
 def test_generate_includes_conversation_history():
-    llm = create_llm(
-        "I remember our conversation."
-    )
+    llm = create_llm("I remember our conversation.")
 
     history = [
         {
@@ -111,12 +99,7 @@ def test_generate_includes_conversation_history():
         history=history,
     )
 
-    messages = (
-        llm.client
-        .chat
-        .completions
-        .last_kwargs["messages"]
-    )
+    messages = llm.client.chat.completions.last_kwargs["messages"]
 
     assert {
         "role": "user",
@@ -130,9 +113,7 @@ def test_generate_includes_conversation_history():
 
 
 def test_generate_includes_long_term_memories():
-    llm = create_llm(
-        "Your favorite language is Python."
-    )
+    llm = create_llm("Your favorite language is Python.")
 
     memories = [
         {
@@ -147,12 +128,7 @@ def test_generate_includes_long_term_memories():
         memories=memories,
     )
 
-    messages = (
-        llm.client
-        .chat
-        .completions
-        .last_kwargs["messages"]
-    )
+    messages = llm.client.chat.completions.last_kwargs["messages"]
 
     # Find only the dedicated memory-context message.
     memory_messages = [
@@ -160,9 +136,7 @@ def test_generate_includes_long_term_memories():
         for message in messages
         if (
             message["role"] == "system"
-            and message["content"].startswith(
-                "Long-term memories about the user:"
-            )
+            and message["content"].startswith("Long-term memories about the user:")
         )
     ]
 
@@ -170,18 +144,13 @@ def test_generate_includes_long_term_memories():
 
     memory_content = memory_messages[0]["content"]
 
-    assert (
-        "favorite_programming_language"
-        in memory_content
-    )
+    assert "favorite_programming_language" in memory_content
 
     assert "Python" in memory_content
 
 
 def test_generate_ignores_invalid_history_roles():
-    llm = create_llm(
-        "Response"
-    )
+    llm = create_llm("Response")
 
     history = [
         {
@@ -207,12 +176,7 @@ def test_generate_ignores_invalid_history_roles():
         history=history,
     )
 
-    messages = (
-        llm.client
-        .chat
-        .completions
-        .last_kwargs["messages"]
-    )
+    messages = llm.client.chat.completions.last_kwargs["messages"]
 
     assert {
         "role": "user",
@@ -225,9 +189,7 @@ def test_generate_ignores_invalid_history_roles():
     } in messages
 
     assert not any(
-        message.get("content")
-        == "Should not be copied"
-        for message in messages
+        message.get("content") == "Should not be copied" for message in messages
     )
 
 
@@ -257,9 +219,7 @@ def test_extract_memory_returns_valid_memory():
         """
     )
 
-    result = llm.extract_memory(
-        "My favorite programming language is Python."
-    )
+    result = llm.extract_memory("My favorite programming language is Python.")
 
     assert result == {
         "memory_type": "preference",
@@ -279,9 +239,7 @@ def test_extract_memory_handles_markdown_json():
 ```"""
     )
 
-    result = llm.extract_memory(
-        "My name is Prem."
-    )
+    result = llm.extract_memory("My name is Prem.")
 
     assert result == {
         "memory_type": "identity",
@@ -293,21 +251,15 @@ def test_extract_memory_handles_markdown_json():
 def test_extract_memory_returns_none_for_null():
     llm = create_llm("null")
 
-    result = llm.extract_memory(
-        "What is Python?"
-    )
+    result = llm.extract_memory("What is Python?")
 
     assert result is None
 
 
 def test_extract_memory_returns_none_for_invalid_json():
-    llm = create_llm(
-        "This is not JSON."
-    )
+    llm = create_llm("This is not JSON.")
 
-    result = llm.extract_memory(
-        "My name is Prem."
-    )
+    result = llm.extract_memory("My name is Prem.")
 
     assert result is None
 
@@ -322,9 +274,7 @@ def test_extract_memory_returns_none_for_missing_fields():
         """
     )
 
-    result = llm.extract_memory(
-        "My name is Prem."
-    )
+    result = llm.extract_memory("My name is Prem.")
 
     assert result is None
 
@@ -340,9 +290,7 @@ def test_extract_memory_returns_none_for_empty_fields():
         """
     )
 
-    result = llm.extract_memory(
-        "My name is Prem."
-    )
+    result = llm.extract_memory("My name is Prem.")
 
     assert result is None
 
@@ -358,9 +306,7 @@ def test_extract_memory_strips_whitespace():
         """
     )
 
-    result = llm.extract_memory(
-        "My favorite language is Python."
-    )
+    result = llm.extract_memory("My favorite language is Python.")
 
     assert result == {
         "memory_type": "preference",

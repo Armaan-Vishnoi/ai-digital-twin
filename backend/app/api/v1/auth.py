@@ -1,16 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
-
-from app.api.deps import DBSession
-from app.repositories.user_repository import UserRepository
-from app.schemas.auth import UserRegister, UserResponse
-from app.services.auth_service import AuthService
 from typing import Annotated
-from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import Depends
-from app.services.dependencies import get_auth_service
-from app.services.auth_service import AuthService
 
-from app.schemas.auth import UserLogin, TokenResponse
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+
+from app.schemas.auth import TokenResponse, UserLogin, UserRegister, UserResponse
+from app.services.auth_service import AuthService
+from app.services.dependencies import get_auth_service
 
 router = APIRouter(
     prefix="/auth",
@@ -22,11 +17,10 @@ AuthServiceDep = Annotated[
     Depends(get_auth_service),
 ]
 
+
 @router.get("/health")
 def health():
-    return {
-        "message": "Authentication API is working"
-    }
+    return {"message": "Authentication API is working"}
 
 
 @router.post(
@@ -47,8 +41,11 @@ def register(
             detail=str(e),
         )
 
+
 from typing import Annotated
+
 from fastapi import Depends
+
 
 @router.post(
     "/login",

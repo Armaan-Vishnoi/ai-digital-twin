@@ -12,7 +12,6 @@ from app.schemas.conversation import (
 from app.services.conversation_service import ConversationService
 from app.services.dependencies import get_conversation_service
 
-
 router = APIRouter(
     prefix="/conversations",
     tags=["Conversations"],

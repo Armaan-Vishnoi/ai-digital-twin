@@ -9,7 +9,6 @@ from app.schemas.message import MessageCreate, MessageResponse
 from app.services.dependencies import get_message_service
 from app.services.message_service import MessageService
 
-
 router = APIRouter(
     prefix="/messages",
     tags=["Messages"],
