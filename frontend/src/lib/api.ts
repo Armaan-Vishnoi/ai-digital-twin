@@ -3,6 +3,7 @@ import type {
   UserRegister,
   UserResponse,
 } from "@/types/auth";
+import type { Memory } from "@/types/memory";
 import type {
   Conversation,
   ConversationCreate,
@@ -207,6 +208,59 @@ export async function deleteMessage(
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  if (!response.ok) {
+    await parseResponse<unknown>(response);
+  }
+}
+
+// --------------------------------------------------
+// MEMORIES
+// --------------------------------------------------
+
+export async function getMemories(
+  accessToken: string,
+): Promise<Memory[]> {
+  const response = await fetch(`${API_URL}/memories`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  return parseResponse<Memory[]>(response);
+}
+
+export async function getMemory(
+  accessToken: string,
+  memoryId: string,
+): Promise<Memory> {
+  const response = await fetch(
+    `${API_URL}/memories/${memoryId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
+
+  return parseResponse<Memory>(response);
+}
+
+export async function deleteMemory(
+  accessToken: string,
+  memoryId: string,
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/memories/${memoryId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  );
 
   if (!response.ok) {
     await parseResponse<unknown>(response);

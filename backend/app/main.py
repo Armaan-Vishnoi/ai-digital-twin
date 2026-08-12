@@ -38,6 +38,7 @@ app.include_router(
 # Root
 # -------------------------------------------------
 
+
 @app.get("/")
 def root() -> dict[str, str]:
     return {

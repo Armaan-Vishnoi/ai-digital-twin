@@ -10,10 +10,7 @@ import {
   getConversations,
   getCurrentUser,
 } from "@/lib/api";
-import {
-  clearTokens,
-  getAccessToken,
-} from "@/lib/auth";
+import { clearTokens, getAccessToken } from "@/lib/auth";
 import type { Conversation } from "@/types/conversation";
 import type { UserResponse } from "@/types/auth";
 
@@ -48,9 +45,7 @@ export default function Home() {
         clearTokens();
 
         setError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load dashboard.",
+          error instanceof Error ? error.message : "Unable to load dashboard.",
         );
 
         router.replace("/login");
@@ -84,10 +79,7 @@ export default function Home() {
         title: title.trim(),
       });
 
-      setConversations((current) => [
-        conversation,
-        ...current,
-      ]);
+      setConversations((current) => [conversation, ...current]);
     } catch (error) {
       setError(
         error instanceof Error
@@ -99,9 +91,7 @@ export default function Home() {
     }
   }
 
-  async function handleDeleteConversation(
-    conversationId: string,
-  ) {
+  async function handleDeleteConversation(conversationId: string) {
     const token = getAccessToken();
 
     if (!token) {
@@ -109,9 +99,7 @@ export default function Home() {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Delete this conversation?",
-    );
+    const confirmed = window.confirm("Delete this conversation?");
 
     if (!confirmed) {
       return;
@@ -121,9 +109,7 @@ export default function Home() {
       await deleteConversation(token, conversationId);
 
       setConversations((current) =>
-        current.filter(
-          (conversation) => conversation.id !== conversationId,
-        ),
+        current.filter((conversation) => conversation.id !== conversationId),
       );
     } catch (error) {
       setError(
@@ -152,13 +138,9 @@ export default function Home() {
       <header className="border-b border-zinc-800">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
-            <p className="text-sm font-medium text-blue-400">
-              AI Digital Twin
-            </p>
+            <p className="text-sm font-medium text-blue-400">AI Digital Twin</p>
 
-            <h1 className="text-xl font-semibold">
-              Dashboard
-            </h1>
+            <h1 className="text-xl font-semibold">Dashboard</h1>
           </div>
 
           <button
@@ -173,17 +155,11 @@ export default function Home() {
 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="mb-10">
-          <p className="text-sm text-zinc-400">
-            Welcome back
-          </p>
+          <p className="text-sm text-zinc-400">Welcome back</p>
 
-          <h2 className="mt-1 text-3xl font-semibold">
-            {user?.full_name}
-          </h2>
+          <h2 className="mt-1 text-3xl font-semibold">{user?.full_name}</h2>
 
-          <p className="mt-2 text-zinc-500">
-            {user?.email}
-          </p>
+          <p className="mt-2 text-zinc-500">{user?.email}</p>
         </div>
 
         {error && (
@@ -192,11 +168,18 @@ export default function Home() {
           </div>
         )}
 
+        <div className="mb-8">
+          <Link
+            href="/memories"
+            className="inline-flex rounded-lg border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800"
+          >
+            View memories →
+          </Link>
+        </div>
+
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-semibold">
-              Conversations
-            </h3>
+            <h3 className="text-xl font-semibold">Conversations</h3>
 
             <p className="mt-1 text-sm text-zinc-500">
               Your private conversations with your digital twin.
@@ -209,17 +192,13 @@ export default function Home() {
             disabled={creating}
             className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {creating
-              ? "Creating..."
-              : "+ New conversation"}
+            {creating ? "Creating..." : "+ New conversation"}
           </button>
         </div>
 
         {conversations.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/40 px-6 py-16 text-center">
-            <h4 className="text-lg font-medium">
-              No conversations yet
-            </h4>
+            <h4 className="text-lg font-medium">No conversations yet</h4>
 
             <p className="mt-2 text-sm text-zinc-500">
               Create your first conversation with your digital twin.
@@ -241,20 +220,13 @@ export default function Home() {
                   </h4>
 
                   <p className="mt-1 text-xs text-zinc-500">
-                    Updated{" "}
-                    {new Date(
-                      conversation.updated_at,
-                    ).toLocaleString()}
+                    Updated {new Date(conversation.updated_at).toLocaleString()}
                   </p>
                 </Link>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    void handleDeleteConversation(
-                      conversation.id,
-                    )
-                  }
+                  onClick={() => void handleDeleteConversation(conversation.id)}
                   className="ml-4 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-950/40"
                 >
                   Delete

@@ -10,6 +10,7 @@ from groq.types.chat import (
 from app.core.config import settings
 from app.llm.base import BaseLLM
 
+
 type ChatMessage = (
     ChatCompletionSystemMessageParam
     | ChatCompletionUserMessageParam
@@ -60,7 +61,6 @@ class GroqLLM(BaseLLM):
             }
         ]
 
-        # Add conversation history.
         if history:
             for message in history:
                 role = message.get("role")
@@ -81,7 +81,6 @@ class GroqLLM(BaseLLM):
                         }
                     )
 
-        # Add current user message.
         messages.append(
             {
                 "role": "user",
@@ -89,7 +88,6 @@ class GroqLLM(BaseLLM):
             }
         )
 
-        # Add long-term memories.
         if memories:
             memory_text = "\n".join(
                 f"- {memory['key']}: {memory['value']}"
@@ -119,17 +117,21 @@ class GroqLLM(BaseLLM):
 
         return content.strip()
 
-    def extract_memory(
+    def extract_memories(
         self,
         user_message: str,
-    ) -> dict | None:
-        """Extract explicit long-term personal information."""
+    ) -> list[dict]:
+        """Extract all explicit long-term personal information."""
 
         system_prompt = """
 You are a memory extraction system for an AI Digital Twin.
 
 Your job is to identify ONLY explicit, useful, long-term personal
 information stated by the USER.
+
+A single user message can contain MULTIPLE independent memories.
+
+Extract every useful explicit memory from the message.
 
 Do NOT infer information.
 
@@ -145,31 +147,54 @@ User:
 "My name is Prem."
 
 Return:
-{
+[
+  {
     "memory_type": "identity",
     "key": "name",
     "value": "Prem"
-}
+  }
+]
 
 User:
 "My favorite programming language is Rust."
 
 Return:
-{
+[
+  {
     "memory_type": "preference",
     "key": "favorite_programming_language",
     "value": "Rust"
-}
+  }
+]
 
 User:
 "I am studying BCA."
 
 Return:
-{
+[
+  {
     "memory_type": "education",
     "key": "degree",
     "value": "BCA"
-}
+  }
+]
+
+User:
+"My name is Prem and I am studying BCA."
+
+Return:
+[
+  {
+    "memory_type": "identity",
+    "key": "name",
+    "value": "Prem"
+  },
+  {
+    "memory_type": "education",
+    "key": "degree",
+    "value": "BCA"
+  }
+]
 
 Examples that should NOT create memories:
 
@@ -177,39 +202,41 @@ User:
 "What is Python?"
 
 Return:
-null
+[]
 
 User:
 "What is my favorite programming language?"
 
 Return:
-null
+[]
 
 User:
 "Explain binary search."
 
 Return:
-null
+[]
 
 User:
 "Write Python code for sorting."
 
 Return:
-null
+[]
 
 Return ONLY valid JSON.
 
 If there is no useful explicit memory, return:
 
-null
+[]
 
-If there is a memory, return exactly:
+If there are memories, return exactly an array of objects:
 
-{
+[
+  {
     "memory_type": "...",
     "key": "...",
     "value": "..."
-}
+  }
+]
 """
 
         response = self.client.chat.completions.create(
@@ -230,11 +257,10 @@ If there is a memory, return exactly:
         raw = response.choices[0].message.content
 
         if not raw:
-            return None
+            return []
 
         raw = raw.strip()
 
-        # Handle markdown code fences.
         if raw.startswith("```"):
             if raw.startswith("```json"):
                 raw = raw[7:]
@@ -247,31 +273,38 @@ If there is a memory, return exactly:
         try:
             result = json.loads(raw)
         except json.JSONDecodeError:
-            return None
+            return []
 
-        if result is None:
-            return None
+        if not isinstance(result, list):
+            return []
 
-        if not isinstance(result, dict):
-            return None
+        memories: list[dict] = []
 
-        required_fields = (
-            "memory_type",
-            "key",
-            "value",
-        )
+        for item in result:
+            if not isinstance(item, dict):
+                continue
 
-        if not all(field in result for field in required_fields):
-            return None
+            required_fields = (
+                "memory_type",
+                "key",
+                "value",
+            )
 
-        if not all(
-            isinstance(result[field], str) and result[field].strip()
-            for field in required_fields
-        ):
-            return None
+            if not all(field in item for field in required_fields):
+                continue
 
-        return {
-            "memory_type": result["memory_type"].strip(),
-            "key": result["key"].strip(),
-            "value": result["value"].strip(),
-        }
+            if not all(
+                isinstance(item[field], str) and item[field].strip()
+                for field in required_fields
+            ):
+                continue
+
+            memories.append(
+                {
+                    "memory_type": item["memory_type"].strip(),
+                    "key": item["key"].strip(),
+                    "value": item["value"].strip(),
+                }
+            )
+
+        return memories

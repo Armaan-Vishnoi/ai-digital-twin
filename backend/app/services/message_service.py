@@ -26,7 +26,6 @@ class MessageService:
         current_user,
         content: str,
     ):
-
         # -------------------------------------------------
         # 1. Check conversation
         # -------------------------------------------------
@@ -74,18 +73,18 @@ class MessageService:
         user_message = self.repository.create(user_message)
 
         # -------------------------------------------------
-        # 5. Extract memory
+        # 5. Extract long-term memories
         # -------------------------------------------------
 
         try:
-            extracted_memory = self.llm.extract_memory(content)
-        except Exception:  # noqa: BLE001            # Memory extraction is best-effort and must not break chat.
-            extracted_memory = None
+            extracted_memories = self.llm.extract_memories(content)
+        except Exception:  # noqa: BLE001
+            extracted_memories = []
 
-        if extracted_memory is not None:
+        for memory in extracted_memories:
             self.memory_service.save_extracted_memory(
                 user_id=current_user.id,
-                memory=extracted_memory,
+                memory=memory,
             )
 
         # -------------------------------------------------
@@ -114,7 +113,7 @@ class MessageService:
         )
 
         # -------------------------------------------------
-        # 7. Save assistant response
+        # 8. Save assistant response
         # -------------------------------------------------
 
         assistant_message = Message(
@@ -135,11 +134,11 @@ class MessageService:
         conversation_id: UUID,
         current_user,
     ):
-
         conversation = self.conversation_repository.get_by_id(
             conversation_id,
             current_user.id,
         )
+
         if conversation is None:
             raise ValueError("Conversation not found")
 
@@ -153,7 +152,6 @@ class MessageService:
         message_id: UUID,
         current_user,
     ):
-
         message = self.repository.get_by_id(message_id)
 
         if message is None:

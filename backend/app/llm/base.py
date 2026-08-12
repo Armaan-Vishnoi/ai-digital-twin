@@ -15,19 +15,22 @@ class BaseLLM(ABC):
         """
 
     @abstractmethod
-    def extract_memory(
+    def extract_memories(
         self,
         user_message: str,
-    ) -> dict | None:
+    ) -> list[dict]:
         """
-        Extract an explicit user memory.
+        Extract explicit long-term personal information.
 
-        Returns:
+        Returns a list of memory objects:
+
+        [
             {
                 "memory_type": "...",
                 "key": "...",
                 "value": "..."
             }
+        ]
 
-        or None when there is nothing worth remembering.
+        Returns an empty list when there is nothing worth remembering.
         """
