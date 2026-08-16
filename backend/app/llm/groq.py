@@ -10,7 +10,6 @@ from groq.types.chat import (
 from app.core.config import settings
 from app.llm.base import BaseLLM
 
-
 type ChatMessage = (
     ChatCompletionSystemMessageParam
     | ChatCompletionUserMessageParam

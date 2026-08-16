@@ -64,9 +64,7 @@ def create_llm(response):
 def test_generate_returns_assistant_response():
     llm = create_llm("Hello! How can I help you?")
 
-    result = llm.generate(
-        "Hello",
-    )
+    result = llm.generate("Hello")
 
     assert result == "Hello! How can I help you?"
 
@@ -130,7 +128,6 @@ def test_generate_includes_long_term_memories():
 
     messages = llm.client.chat.completions.last_kwargs["messages"]
 
-    # Find only the dedicated memory-context message.
     memory_messages = [
         message
         for message in messages
@@ -208,108 +205,124 @@ def test_generate_raises_when_llm_returns_empty_response():
 # ============================================================
 
 
-def test_extract_memory_returns_valid_memory():
+def test_extract_memories_returns_valid_memory():
     llm = create_llm(
         """
+        [
+            {
+                "memory_type": "preference",
+                "key": "favorite_programming_language",
+                "value": "Python"
+            }
+        ]
+        """
+    )
+
+    result = llm.extract_memories("My favorite programming language is Python.")
+
+    assert result == [
         {
             "memory_type": "preference",
             "key": "favorite_programming_language",
-            "value": "Python"
+            "value": "Python",
         }
-        """
-    )
-
-    result = llm.extract_memory("My favorite programming language is Python.")
-
-    assert result == {
-        "memory_type": "preference",
-        "key": "favorite_programming_language",
-        "value": "Python",
-    }
+    ]
 
 
-def test_extract_memory_handles_markdown_json():
+def test_extract_memories_handles_markdown_json():
     llm = create_llm(
         """```json
-{
-    "memory_type": "identity",
-    "key": "name",
-    "value": "Prem"
-}
+[
+    {
+        "memory_type": "identity",
+        "key": "name",
+        "value": "Prem"
+    }
+]
 ```"""
     )
 
-    result = llm.extract_memory("My name is Prem.")
+    result = llm.extract_memories("My name is Prem.")
 
-    assert result == {
-        "memory_type": "identity",
-        "key": "name",
-        "value": "Prem",
-    }
+    assert result == [
+        {
+            "memory_type": "identity",
+            "key": "name",
+            "value": "Prem",
+        }
+    ]
 
 
-def test_extract_memory_returns_none_for_null():
+def test_extract_memories_returns_empty_list_for_null():
     llm = create_llm("null")
 
-    result = llm.extract_memory("What is Python?")
+    result = llm.extract_memories("What is Python?")
 
-    assert result is None
+    assert result == []
 
 
-def test_extract_memory_returns_none_for_invalid_json():
+def test_extract_memories_returns_empty_list_for_invalid_json():
     llm = create_llm("This is not JSON.")
 
-    result = llm.extract_memory("My name is Prem.")
+    result = llm.extract_memories("My name is Prem.")
 
-    assert result is None
+    assert result == []
 
 
-def test_extract_memory_returns_none_for_missing_fields():
+def test_extract_memories_returns_empty_list_for_missing_fields():
     llm = create_llm(
         """
-        {
-            "memory_type": "identity",
-            "key": "name"
-        }
+        [
+            {
+                "memory_type": "identity",
+                "key": "name"
+            }
+        ]
         """
     )
 
-    result = llm.extract_memory("My name is Prem.")
+    result = llm.extract_memories("My name is Prem.")
 
-    assert result is None
+    assert result == []
 
 
-def test_extract_memory_returns_none_for_empty_fields():
+def test_extract_memories_returns_empty_list_for_empty_fields():
     llm = create_llm(
         """
-        {
-            "memory_type": "identity",
-            "key": "",
-            "value": "Prem"
-        }
+        [
+            {
+                "memory_type": "identity",
+                "key": "",
+                "value": "Prem"
+            }
+        ]
         """
     )
 
-    result = llm.extract_memory("My name is Prem.")
+    result = llm.extract_memories("My name is Prem.")
 
-    assert result is None
+    assert result == []
 
 
-def test_extract_memory_strips_whitespace():
+def test_extract_memories_strips_whitespace():
     llm = create_llm(
         """
-        {
-            "memory_type": " preference ",
-            "key": " favorite_language ",
-            "value": " Python "
-        }
+        [
+            {
+                "memory_type": " preference ",
+                "key": " favorite_language ",
+                "value": " Python "
+            }
+        ]
         """
     )
 
-    result = llm.extract_memory("My favorite language is Python.")
+    result = llm.extract_memories("My favorite language is Python.")
 
-    assert result == {
-        "memory_type": "preference",
-        "key": "favorite_language",
-        "value": "Python",
-    }
+    assert result == [
+        {
+            "memory_type": "preference",
+            "key": "favorite_language",
+            "value": "Python",
+        }
+    ]

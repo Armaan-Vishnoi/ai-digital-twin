@@ -76,8 +76,19 @@ class MessageService:
         # 5. Extract long-term memories
         # -------------------------------------------------
 
+        # -------------------------------------------------
+        # 5. Extract long-term memories
+        # -------------------------------------------------
+
         try:
-            extracted_memories = self.llm.extract_memories(content)
+            if hasattr(self.llm, "extract_memory"):
+                extracted_memory = self.llm.extract_memory(content)
+
+                extracted_memories = (
+                    [extracted_memory] if extracted_memory is not None else []
+                )
+            else:
+                extracted_memories = self.llm.extract_memories(content)
         except Exception:  # noqa: BLE001
             extracted_memories = []
 

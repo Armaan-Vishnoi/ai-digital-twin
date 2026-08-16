@@ -3,8 +3,6 @@ import pytest
 from app.core.config import settings
 from app.llm.groq import GroqLLM
 
-pytestmark = pytest.mark.integration
-
 
 @pytest.mark.skipif(
     not settings.GROQ_API_KEY,
@@ -13,11 +11,11 @@ pytestmark = pytest.mark.integration
 def test_real_groq_generate():
     llm = GroqLLM()
 
-    response = llm.generate("Reply with exactly: REAL GROQ TEST PASSED")
+    response = llm.generate("Reply with exactly: GROQ_TEST_OK")
 
     assert response
     assert isinstance(response, str)
-    assert len(response.strip()) > 0
+    assert response.strip()
 
 
 @pytest.mark.skipif(
@@ -27,12 +25,14 @@ def test_real_groq_generate():
 def test_real_groq_memory_extraction():
     llm = GroqLLM()
 
-    memory = llm.extract_memory("My favorite programming language is Python.")
+    memories = llm.extract_memories("My favorite programming language is Python.")
 
-    assert memory is not None
+    assert isinstance(memories, list)
+    assert len(memories) >= 1
 
-    assert memory["memory_type"]
-    assert memory["key"]
-    assert memory["value"]
-
-    assert memory["value"].lower() == "python"
+    assert any(
+        memory["memory_type"] == "preference"
+        and memory["key"] == "favorite_programming_language"
+        and memory["value"] == "Python"
+        for memory in memories
+    )
