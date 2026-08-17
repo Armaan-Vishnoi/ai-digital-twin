@@ -21,16 +21,4 @@ class BaseLLM(ABC):
     ) -> list[dict]:
         """
         Extract explicit long-term personal information.
-
-        Returns a list of memory objects:
-
-        [
-            {
-                "memory_type": "...",
-                "key": "...",
-                "value": "..."
-            }
-        ]
-
-        Returns an empty list when there is nothing worth remembering.
         """

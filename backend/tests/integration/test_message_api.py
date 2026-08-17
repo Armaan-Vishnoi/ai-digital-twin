@@ -108,6 +108,7 @@ class FakeMessageService:
         conversation_id,
         current_user,
         content,
+        model="auto",
     ):
         conversation = self.db.get(
             Conversation,

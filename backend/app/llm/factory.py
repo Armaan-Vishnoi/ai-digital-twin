@@ -3,10 +3,13 @@ from app.llm.base import BaseLLM
 from app.llm.groq import GroqLLM
 
 
-def get_llm() -> BaseLLM:
-    provider = settings.LLM_PROVIDER.strip().lower()
+def get_llm(model: str = "auto") -> BaseLLM:
+    selected_model = model.strip().lower()
 
-    if provider == "groq":
+    if selected_model == "auto":
+        selected_model = settings.LLM_PROVIDER.strip().lower()
+
+    if selected_model == "groq":
         return GroqLLM()
 
-    raise ValueError(f"Unsupported LLM provider: {settings.LLM_PROVIDER}")
+    raise ValueError(f"Unsupported LLM model: {model}")

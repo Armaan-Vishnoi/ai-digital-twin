@@ -25,6 +25,7 @@ class MessageService:
         conversation_id: UUID,
         current_user,
         content: str,
+        model: str = "auto",
     ):
         # -------------------------------------------------
         # 1. Check conversation
@@ -68,6 +69,7 @@ class MessageService:
             conversation_id=conversation_id,
             role="user",
             content=content,
+            model=model,
         )
 
         user_message = self.repository.create(user_message)
@@ -113,11 +115,12 @@ class MessageService:
             for memory in user_memories
         ]
 
+        llm = self.llm if model == "auto" else get_llm(model)
         # -------------------------------------------------
         # 7. Generate AI response
         # -------------------------------------------------
 
-        ai_text = self.llm.generate(
+        ai_text = llm.generate(
             content,
             history=history,
             memories=memory_context,
@@ -131,6 +134,7 @@ class MessageService:
             conversation_id=conversation_id,
             role="assistant",
             content=ai_text,
+            model=model,
         )
 
         assistant_message = self.repository.create(assistant_message)

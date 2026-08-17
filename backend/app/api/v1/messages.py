@@ -43,6 +43,7 @@ def create_message(
             conversation_id=conversation_id,
             current_user=current_user,
             content=data.content,
+            model=data.model,
         )
 
     except ValueError as e:
