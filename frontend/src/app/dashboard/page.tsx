@@ -27,105 +27,162 @@ import { clearTokens, getAccessToken } from "@/lib/auth";
 import type { Conversation } from "@/types/conversation";
 import type { Message } from "@/types/message";
 
+// --------------------------------------------------
+// HELPERS
+// --------------------------------------------------
+
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  return Array.from(new Map(items.map((item) => [item.id, item])).values());
+}
+
+// --------------------------------------------------
+// PAGE
+// --------------------------------------------------
+
 export default function DashboardPage() {
   const router = useRouter();
+
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
-
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+
   const [loading, setLoading] = useState(false);
-  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [error, setError] = useState<string | null>(null);
+
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // --------------------------------------------------
   // AUTHENTICATION
   // --------------------------------------------------
 
   useEffect(() => {
-  const accessToken = getAccessToken();
+    const accessToken = getAccessToken();
 
-  if (!accessToken) {
-    router.replace("/login");
-  }
-}, [router]);
+    if (!accessToken) {
+      setAuthChecked(true);
+      router.replace("/login");
+      return;
+    }
+
+    setAuthenticated(true);
+    setAuthChecked(true);
+  }, [router]);
+
   // --------------------------------------------------
   // LOAD CONVERSATIONS
   // --------------------------------------------------
 
   useEffect(() => {
-    const accessToken = getAccessToken();
-
-    if (accessToken === null) {
+    if (!authenticated) {
       return;
     }
 
-    const token = accessToken;
+    const accessToken = getAccessToken();
+
+    if (!accessToken) {
+      return;
+    }
+
+    let cancelled = false;
 
     async function loadConversations() {
       try {
         setLoadingConversations(true);
         setError(null);
 
-        const data = await getConversations(token);
+        const data = await getConversations(accessToken);
 
-        setConversations(data);
+        if (!cancelled) {
+          setConversations(uniqueById(data));
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load conversations.",
-        );
+        if (!cancelled) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load conversations.",
+          );
+        }
       } finally {
-        setLoadingConversations(false);
+        if (!cancelled) {
+          setLoadingConversations(false);
+        }
       }
     }
 
     void loadConversations();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authenticated]);
 
   // --------------------------------------------------
   // LOAD MESSAGES
   // --------------------------------------------------
 
   useEffect(() => {
+    if (!authenticated) {
+      return;
+    }
+
     if (!activeConversationId) {
+      setMessages([]);
+      setLoadingMessages(false);
       return;
     }
 
     const accessToken = getAccessToken();
 
-    if (accessToken === null) {
+    if (!accessToken) {
       return;
     }
 
-    const token = accessToken;
-
     const conversationId = activeConversationId;
+
+    let cancelled = false;
 
     async function loadMessages() {
       try {
         setLoadingMessages(true);
         setError(null);
 
-        const data = await getMessages(token, conversationId);
-        setMessages(data);
+        const data = await getMessages(accessToken, conversationId);
+
+        if (!cancelled) {
+          setMessages(uniqueById(data));
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load messages.",
-        );
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load messages.",
+          );
+        }
       } finally {
-        setLoadingMessages(false);
+        if (!cancelled) {
+          setLoadingMessages(false);
+        }
       }
     }
 
     void loadMessages();
-  }, [activeConversationId]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversationId, authenticated]);
 
   // --------------------------------------------------
   // NEW CHAT
@@ -137,9 +194,7 @@ export default function DashboardPage() {
     setInput("");
     setError(null);
 
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 50);
+    router.push("/dashboard");
   }
 
   // --------------------------------------------------
@@ -182,7 +237,7 @@ export default function DashboardPage() {
 
         setActiveConversationId(conversation.id);
 
-        setConversations((previous) => [conversation, ...previous]);
+        setConversations((previous) => uniqueById([conversation, ...previous]));
       }
 
       // ------------------------------------------------
@@ -193,11 +248,9 @@ export default function DashboardPage() {
         content,
       });
 
-      setMessages((previous) => [
-        ...previous,
-        pair.user_message,
-        pair.assistant_message,
-      ]);
+      setMessages((previous) =>
+        uniqueById([...previous, pair.user_message, pair.assistant_message]),
+      );
 
       setInput("");
 
@@ -205,10 +258,13 @@ export default function DashboardPage() {
         textareaRef.current?.focus();
       }, 50);
 
-      // Refresh sidebar ordering.
+      // ------------------------------------------------
+      // REFRESH CONVERSATIONS
+      // ------------------------------------------------
+
       const updatedConversations = await getConversations(accessToken);
 
-      setConversations(updatedConversations);
+      setConversations(uniqueById(updatedConversations));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message.");
     } finally {
@@ -240,6 +296,8 @@ export default function DashboardPage() {
     }
 
     try {
+      setError(null);
+
       await deleteConversation(accessToken, conversationId);
 
       setConversations((previous) =>
@@ -247,7 +305,8 @@ export default function DashboardPage() {
       );
 
       if (activeConversationId === conversationId) {
-        startNewChat();
+        setActiveConversationId(null);
+        setMessages([]);
       }
     } catch (err) {
       setError(
@@ -262,24 +321,29 @@ export default function DashboardPage() {
 
   function handleLogout() {
     clearTokens();
+
+    setAuthenticated(false);
+    setConversations([]);
+    setMessages([]);
+    setActiveConversationId(null);
+
     router.replace("/login");
   }
 
   // --------------------------------------------------
   // INITIAL LOADING
+  // IMPORTANT:
+  // Same HTML is rendered initially on server and client.
+  // This prevents hydration mismatch.
   // --------------------------------------------------
 
-  if (typeof window === "undefined") {
-  return null;
-}
-
-if (!getAccessToken()) {
-  return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="text-zinc-400">Loading...</div>
-    </main>
-  );
-}
+  if (!authChecked || !authenticated) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-zinc-400">Loading...</div>
+      </main>
+    );
+  }
 
   // --------------------------------------------------
   // UI

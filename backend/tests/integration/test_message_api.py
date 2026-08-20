@@ -392,3 +392,26 @@ def test_message_validation(
     )
 
     assert response.status_code == 422
+
+
+def test_create_message_with_selected_model(
+    client: TestClient,
+    conversation: Conversation,
+):
+    selected_model = "groq:openai/gpt-oss-120b"
+
+    response = client.post(
+        f"/api/v1/messages/{conversation.id}",
+        json={
+            "content": "Hello AI",
+            "model": selected_model,
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["user_message"]["model"] == selected_model
+
+    assert data["assistant_message"]["model"] == selected_model

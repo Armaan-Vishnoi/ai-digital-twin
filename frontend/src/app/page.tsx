@@ -20,9 +20,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <p className="text-zinc-500">
-        Loading AI Digital Twin...
-      </p>
+      <p className="text-zinc-500">Loading AI Digital Twin...</p>
     </main>
   );
 }

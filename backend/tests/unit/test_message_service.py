@@ -107,13 +107,16 @@ class FakeLLM:
         self.extracted_memory = extracted_memory
         self.generated_response = generated_response
 
-        self.extract_memory_calls = []
+        self.extract_memories_calls = []
         self.generate_calls = []
 
-    def extract_memory(self, user_message):
-        self.extract_memory_calls.append(user_message)
+    def extract_memories(self, user_message):
+        self.extract_memories_calls.append(user_message)
 
-        return self.extracted_memory
+        if self.extracted_memory is None:
+            return []
+
+        return [self.extracted_memory]
 
     def generate(
         self,
@@ -267,9 +270,11 @@ def test_create_extracts_and_saves_memory():
         content="My favorite programming language is Python.",
     )
 
-    assert len(llm.extract_memory_calls) == 1
+    assert len(llm.extract_memories_calls) == 1
 
-    assert llm.extract_memory_calls[0] == "My favorite programming language is Python."
+    assert (
+        llm.extract_memories_calls[0] == "My favorite programming language is Python."
+    )
 
     assert len(memory_service.saved_memories) == 1
 
@@ -306,7 +311,7 @@ def test_no_memory_is_saved_when_extraction_returns_none():
         content="What is Python?",
     )
 
-    assert len(llm.extract_memory_calls) == 1
+    assert len(llm.extract_memories_calls) == 1
 
     assert len(memory_service.saved_memories) == 0
 
@@ -456,7 +461,7 @@ def test_user_cannot_send_message_to_another_users_conversation():
 
     assert len(llm.generate_calls) == 0
 
-    assert len(llm.extract_memory_calls) == 0
+    assert len(llm.extract_memories_calls) == 0
 
 
 # ============================================================
@@ -491,7 +496,7 @@ def test_message_to_nonexistent_conversation_fails():
 
     assert len(llm.generate_calls) == 0
 
-    assert len(llm.extract_memory_calls) == 0
+    assert len(llm.extract_memories_calls) == 0
 
 
 # ============================================================
@@ -513,7 +518,7 @@ def test_memory_extraction_failure_does_not_break_chat():
     conversation_repository.add(conversation)
 
     class FailingMemoryLLM:
-        def extract_memory(self, user_message):
+        def extract_memories(self, user_message):
             raise RuntimeError("LLM memory extraction failed")
 
         def generate(

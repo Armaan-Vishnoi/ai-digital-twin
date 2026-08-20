@@ -44,19 +44,13 @@ export default function RegisterPage() {
         password,
       });
 
-      setSuccess(
-        "Account created successfully. You can now log in.",
-      );
+      setSuccess("Account created successfully. You can now log in.");
 
       setFullName("");
       setEmail("");
       setPassword("");
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Registration failed.",
-      );
+      setError(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -70,19 +64,14 @@ export default function RegisterPage() {
             AI Digital Twin
           </p>
 
-          <h1 className="text-3xl font-bold text-white">
-            Create your account
-          </h1>
+          <h1 className="text-3xl font-bold text-white">Create your account</h1>
 
           <p className="mt-2 text-sm text-zinc-400">
             Create an account to start building your digital twin.
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label
               htmlFor="fullName"
@@ -95,9 +84,7 @@ export default function RegisterPage() {
               id="fullName"
               type="text"
               value={fullName}
-              onChange={(event) =>
-                setFullName(event.target.value)
-              }
+              onChange={(event) => setFullName(event.target.value)}
               placeholder="Your full name"
               autoComplete="name"
               disabled={loading}
@@ -117,9 +104,7 @@ export default function RegisterPage() {
               id="email"
               type="email"
               value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               autoComplete="email"
               disabled={loading}
@@ -139,9 +124,7 @@ export default function RegisterPage() {
               id="password"
               type="password"
               value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="At least 8 characters"
               autoComplete="new-password"
               disabled={loading}

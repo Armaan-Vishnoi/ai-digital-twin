@@ -10,6 +10,7 @@ from groq.types.chat import (
 from app.core.config import settings
 from app.llm.base import BaseLLM
 
+
 type ChatMessage = (
     ChatCompletionSystemMessageParam
     | ChatCompletionUserMessageParam
@@ -55,37 +56,22 @@ class GroqLLM(BaseLLM):
                     "history, long-term memories, or current user message, "
                     "say that you do not know.\n\n"
                     "When answering questions about the user's personal "
-                    "information, prefer the most recent relevant memory."
+                    "information, prefer the most recent relevant memory.\n\n"
+                    "Be concise by default. Answer simple questions directly "
+                    "without unnecessary introductions, summaries, tables, "
+                    "or long explanations.\n\n"
+                    "Provide detailed explanations only when the user explicitly "
+                    "asks for detail, a deep explanation, examples, step-by-step "
+                    "guidance, or a comprehensive answer.\n\n"
+                    "Match the length and style of the response to the user's "
+                    "question. Do not make a simple answer unnecessarily long."
                 ),
             }
         ]
 
-        if history:
-            for message in history:
-                role = message.get("role")
-                content = message.get("content")
-
-                if role == "user" and content:
-                    messages.append(
-                        {
-                            "role": "user",
-                            "content": content,
-                        }
-                    )
-                elif role == "assistant" and content:
-                    messages.append(
-                        {
-                            "role": "assistant",
-                            "content": content,
-                        }
-                    )
-
-        messages.append(
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        )
+        # -------------------------------------------------
+        # 1. Add long-term memories
+        # -------------------------------------------------
 
         if memories:
             memory_text = "\n".join(
@@ -103,6 +89,46 @@ class GroqLLM(BaseLLM):
                         ),
                     }
                 )
+
+        # -------------------------------------------------
+        # 2. Add previous conversation history
+        # -------------------------------------------------
+
+        if history:
+            for message in history:
+                role = message.get("role")
+                content = message.get("content")
+
+                if role == "user" and content:
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": content,
+                        }
+                    )
+
+                elif role == "assistant" and content:
+                    messages.append(
+                        {
+                            "role": "assistant",
+                            "content": content,
+                        }
+                    )
+
+        # -------------------------------------------------
+        # 3. Add current user message
+        # -------------------------------------------------
+
+        messages.append(
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        )
+
+        # -------------------------------------------------
+        # 4. Generate response
+        # -------------------------------------------------
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -260,6 +286,7 @@ If there are memories, return exactly an array of objects:
 
         raw = raw.strip()
 
+        # Remove Markdown code fences if the model returns them.
         if raw.startswith("```"):
             if raw.startswith("```json"):
                 raw = raw[7:]
@@ -271,6 +298,7 @@ If there are memories, return exactly an array of objects:
 
         try:
             result = json.loads(raw)
+
         except json.JSONDecodeError:
             return []
 

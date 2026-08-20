@@ -29,9 +29,7 @@ export default function MemoriesPage() {
         setMemories(data);
       } catch (error) {
         setError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load memories.",
+          error instanceof Error ? error.message : "Unable to load memories.",
         );
       } finally {
         setLoading(false);
@@ -49,9 +47,7 @@ export default function MemoriesPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      "Delete this memory permanently?",
-    );
+    const confirmed = window.confirm("Delete this memory permanently?");
 
     if (!confirmed) {
       return;
@@ -65,9 +61,7 @@ export default function MemoriesPage() {
       );
     } catch (error) {
       setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete memory.",
+        error instanceof Error ? error.message : "Unable to delete memory.",
       );
     }
   }
@@ -84,9 +78,7 @@ export default function MemoriesPage() {
               ← Dashboard
             </Link>
 
-            <h1 className="mt-1 text-xl font-semibold">
-              Long-term memories
-            </h1>
+            <h1 className="mt-1 text-xl font-semibold">Long-term memories</h1>
           </div>
         </div>
       </header>
@@ -98,8 +90,8 @@ export default function MemoriesPage() {
           </h2>
 
           <p className="mt-2 text-zinc-500">
-            These are explicit pieces of information saved from
-            your conversations.
+            These are explicit pieces of information saved from your
+            conversations.
           </p>
         </div>
 
@@ -115,13 +107,11 @@ export default function MemoriesPage() {
           </div>
         ) : memories.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/40 p-12 text-center">
-            <h3 className="text-lg font-medium">
-              No memories yet
-            </h3>
+            <h3 className="text-lg font-medium">No memories yet</h3>
 
             <p className="mt-2 text-sm text-zinc-500">
-              Tell your Digital Twin something about yourself
-              during a conversation.
+              Tell your Digital Twin something about yourself during a
+              conversation.
             </p>
           </div>
         ) : (
@@ -137,27 +127,20 @@ export default function MemoriesPage() {
                       {memory.memory_type}
                     </span>
 
-                    <h3 className="mt-3 text-lg font-medium">
-                      {memory.key}
-                    </h3>
+                    <h3 className="mt-3 text-lg font-medium">{memory.key}</h3>
 
                     <p className="mt-2 break-words text-zinc-300">
                       {memory.value}
                     </p>
 
                     <p className="mt-3 text-xs text-zinc-600">
-                      Updated{" "}
-                      {new Date(
-                        memory.updated_at,
-                      ).toLocaleString()}
+                      Updated {new Date(memory.updated_at).toLocaleString()}
                     </p>
                   </div>
 
                   <button
                     type="button"
-                    onClick={() =>
-                      void handleDelete(memory.id)
-                    }
+                    onClick={() => void handleDelete(memory.id)}
                     className="shrink-0 rounded-lg px-3 py-2 text-sm text-red-400 transition hover:bg-red-950/40"
                   >
                     Delete

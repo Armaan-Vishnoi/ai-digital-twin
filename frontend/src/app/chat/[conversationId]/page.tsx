@@ -126,8 +126,8 @@ export default function ChatPage() {
           </h1>
 
           <Link
-            href="/"
-            className="mt-4 inline-block text-blue-400 hover:text-blue-300"
+            href="/dashboard"
+           className="mt-4 inline-block text-blue-400 hover:text-blue-300"
           >
             Back to dashboard
           </Link>
@@ -144,7 +144,7 @@ export default function ChatPage() {
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
           <div className="min-w-0">
             <Link
-              href="/"
+              href="/dashboard"
               className="text-sm text-zinc-500 hover:text-zinc-300"
             >
               ← Dashboard

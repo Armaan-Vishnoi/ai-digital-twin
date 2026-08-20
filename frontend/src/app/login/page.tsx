@@ -29,11 +29,7 @@ export default function LoginPage() {
 
       router.push("/");
     } catch (error) {
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Unable to log in.",
-      );
+      setError(error instanceof Error ? error.message : "Unable to log in.");
     } finally {
       setLoading(false);
     }
@@ -47,9 +43,7 @@ export default function LoginPage() {
             AI Digital Twin
           </p>
 
-          <h1 className="text-3xl font-semibold text-white">
-            Welcome back
-          </h1>
+          <h1 className="text-3xl font-semibold text-white">Welcome back</h1>
 
           <p className="mt-2 text-sm text-zinc-400">
             Log in to continue building your digital twin.

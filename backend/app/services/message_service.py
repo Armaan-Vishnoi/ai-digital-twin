@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from app.llm.factory import get_llm
+from app.llm.registry import ModelRegistry
 from app.models.message import Message
 from app.repositories.conversation_repository import ConversationRepository
 from app.repositories.message_repository import MessageRepository
@@ -14,11 +14,13 @@ class MessageService:
         conversation_repository: ConversationRepository,
         memory_service: MemoryService,
         llm=None,
+        model_registry: ModelRegistry | None = None,
     ):
         self.repository = repository
         self.conversation_repository = conversation_repository
         self.memory_service = memory_service
-        self.llm = llm or get_llm()
+        self.llm = llm
+        self.model_registry = model_registry or ModelRegistry()
 
     def create(
         self,
@@ -47,7 +49,21 @@ class MessageService:
             raise ValueError("Conversation not found")
 
         # -------------------------------------------------
-        # 3. Get previous conversation history
+        # 3. Resolve model
+        # -------------------------------------------------
+
+        selected_model = self.model_registry.resolve_model_id(model)
+        # -------------------------------------------------
+        # 4. Resolve LLM
+        # -------------------------------------------------
+
+        if self.llm is not None:
+            llm = self.llm
+        else:
+            llm = self.model_registry.get_llm(selected_model)
+
+        # -------------------------------------------------
+        # 5. Get previous conversation history
         # -------------------------------------------------
 
         previous_messages = self.repository.list_by_conversation(conversation_id)
@@ -62,35 +78,24 @@ class MessageService:
         ]
 
         # -------------------------------------------------
-        # 4. Save user message
+        # 6. Save user message
         # -------------------------------------------------
 
         user_message = Message(
             conversation_id=conversation_id,
             role="user",
             content=content,
-            model=model,
+            model=selected_model,
         )
 
         user_message = self.repository.create(user_message)
 
         # -------------------------------------------------
-        # 5. Extract long-term memories
-        # -------------------------------------------------
-
-        # -------------------------------------------------
-        # 5. Extract long-term memories
+        # 7. Extract long-term memories
         # -------------------------------------------------
 
         try:
-            if hasattr(self.llm, "extract_memory"):
-                extracted_memory = self.llm.extract_memory(content)
-
-                extracted_memories = (
-                    [extracted_memory] if extracted_memory is not None else []
-                )
-            else:
-                extracted_memories = self.llm.extract_memories(content)
+            extracted_memories = llm.extract_memories(content)
         except Exception:  # noqa: BLE001
             extracted_memories = []
 
@@ -101,7 +106,7 @@ class MessageService:
             )
 
         # -------------------------------------------------
-        # 6. Get long-term memories
+        # 8. Get long-term memories
         # -------------------------------------------------
 
         user_memories = self.memory_service.list(current_user.id)
@@ -115,9 +120,8 @@ class MessageService:
             for memory in user_memories
         ]
 
-        llm = self.llm if model == "auto" else get_llm(model)
         # -------------------------------------------------
-        # 7. Generate AI response
+        # 9. Generate AI response
         # -------------------------------------------------
 
         ai_text = llm.generate(
@@ -127,14 +131,14 @@ class MessageService:
         )
 
         # -------------------------------------------------
-        # 8. Save assistant response
+        # 10. Save assistant response
         # -------------------------------------------------
 
         assistant_message = Message(
             conversation_id=conversation_id,
             role="assistant",
             content=ai_text,
-            model=model,
+            model=selected_model,
         )
 
         assistant_message = self.repository.create(assistant_message)
